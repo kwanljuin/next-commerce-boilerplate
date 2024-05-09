@@ -20,8 +20,8 @@ import { Check, ChevronsUpDown } from "lucide-react";
 
 interface ComboboxProps {
   items: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
+  value: string[];
+  onSelect: (value: string) => void;
   placeholder?: string;
   className?: string;
   name?: string;
@@ -31,7 +31,7 @@ interface ComboboxProps {
 export function Combobox({
   items,
   value,
-  onChange,
+  onSelect,
   placeholder = "Select an option...",
   className,
   name,
@@ -50,7 +50,9 @@ export function Combobox({
           className={cn("w-[200px] justify-between", className)}
         >
           {value
-            ? items.find((item) => item.value === value)?.label
+            ? value
+                .map((val) => items.find((item) => item.value === val)?.label)
+                .join(", ")
             : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -66,14 +68,14 @@ export function Combobox({
                   key={item.value}
                   value={item.value}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
+                    console.log(currentValue);
+                    onSelect(currentValue);
                   }}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === item.value ? "opacity-100" : "opacity-0"
+                      value.includes(item.value) ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {item.label}

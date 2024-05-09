@@ -2,7 +2,6 @@
 
 import db from "@/db/db";
 import { z } from "zod";
-import fs from "fs/promises";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
