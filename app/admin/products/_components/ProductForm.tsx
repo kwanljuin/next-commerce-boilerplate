@@ -9,10 +9,32 @@ import { useState } from "react";
 import { addProduct, updateProduct } from "../../_actions/products";
 import { useFormState, useFormStatus } from "react-dom";
 import { Product } from "@prisma/client";
-import { Combobox } from "@/components/Combobox";
+import { TagInput } from "@/components/TagInput";
+import { addTag } from "../../_actions/tags";
+import type { Option } from "@/components/TagInput";
 
-export function ProductForm({ product }: { product?: Product | null }) {
-  const [selectedFramework, setSelectedFramework] = useState("");
+export function ProductForm({
+  product,
+  tags,
+}: {
+  product?: Product | null;
+  tags: { id: string; name: string }[];
+}) {
+  const [selectedTags, setSelectedTags] = useState<Option[]>([]);
+  async function onCreateTag(tagName: string) {
+    const response = await addTag(tagName);
+
+    if (response.data != null) {
+      // Add the new tag to the list of tags
+      setSelectedTags((prev) => [
+        ...prev,
+        {
+          value: response.data.id,
+          label: response.data.name,
+        },
+      ]);
+    }
+  }
 
   const [error, action] = useFormState(
     product == null ? addProduct : updateProduct.bind(null, product.id),
@@ -21,10 +43,6 @@ export function ProductForm({ product }: { product?: Product | null }) {
   const [priceInCents, setPriceInCents] = useState<number | undefined>(
     product?.priceInCents
   );
-  const tags = [
-    { value: "tag1", label: "Tag1" },
-    { value: "tag2", label: "Tag2" },
-  ];
 
   return (
     <form action={action} className="space-y-8">
@@ -69,20 +87,35 @@ export function ProductForm({ product }: { product?: Product | null }) {
         )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="tag">Tag</Label>
+        <Label>Tag</Label>
         <br />
-        <Combobox
+        <TagInput
           id="tag"
-          name="tag"
-          items={tags}
-          value={selectedFramework}
-          onChange={(value) => setSelectedFramework(value)}
-          placeholder="Select a framework..."
-          className="mb-4 w-full"
+          options={tags?.map(({ id, name }) => ({ value: id, label: name }))}
+          value={selectedTags}
+          onCreateTag={onCreateTag}
+          onSelect={(tag) => {
+            setSelectedTags((prev) => {
+              // Check if the tag already exists in selectedTags
+              const tagIndex = prev.findIndex(
+                (selectedTag) => selectedTag.value === tag.value
+              );
+
+              if (tagIndex !== -1) {
+                // Tag exists, remove it
+                return prev.filter(
+                  (selectedTag) => selectedTag.value !== tag.value
+                );
+              } else {
+                // Tag doesn't exist, add it
+                return [...prev, tag];
+              }
+            });
+          }}
+          placeholder="Select a tag..."
+          className="mb-4 min-w-56 w-max"
         />
-        {error.tag && (
-          <div className="text-destructive">{error.description}</div>
-        )}
+        {/* {error.tag && <div className="text-destructive">{error.tag}</div>} */}
       </div>
       <SubmitButton />
     </form>

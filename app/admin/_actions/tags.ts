@@ -1,37 +1,30 @@
 "use server";
 
 import db from "@/db/db";
-import { z } from "zod";
-import fs from "fs/promises";
-import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const addSchema = z.object({
   name: z.string().min(1),
-  description: z.string().min(1),
-  priceInCents: z.coerce.number().int().min(1),
-  tag: z.string(),
 });
 
-export async function addTag(prevState: unknown, formData: FormData) {
-  const result = addSchema.safeParse(Object.fromEntries(formData.entries()));
+export async function addTag(name: string) {
+  const result = addSchema.safeParse({ name });
   if (result.success === false) {
-    return result.error.formErrors.fieldErrors;
+    return { error: result.error };
   }
 
   const data = result.data;
 
-  await db.product.create({
+  const tag = await db.tag.create({
     data: {
-      isAvailableForPurchase: false,
       name: data.name,
-      description: data.description,
-      priceInCents: data.priceInCents,
     },
   });
-
-  revalidatePath("/");
   revalidatePath("/products");
+  return { data: tag };
+}
 
-  redirect("/admin/products");
+export async function deleteTag(id: string) {
+  const tag = await db.tag.delete({ where: { id } });
 }
